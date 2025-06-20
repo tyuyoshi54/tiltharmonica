@@ -484,6 +484,12 @@
             <button id="start-button" class="start-button">
                 🎵 演奏開始
             </button>
+            <button id="test-sound-button" class="start-button" style="background: linear-gradient(45deg, #38a169, #2f855a); margin-top: 10px;">
+                🔊 音声テスト
+            </button>
+            <button id="permission-button" class="start-button" style="background: linear-gradient(45deg, #ed8936, #dd6b20); margin-top: 10px;">
+                🔐 センサー許可要求
+            </button>
             <div id="permission-notice" class="permission-notice">
                 <p>⚠️ 音が出るので周囲にご配慮ください</p>
             </div>
@@ -501,6 +507,14 @@
                         <span class="sensor-label">Beta (上下):</span>
                         <span id="beta-value" class="sensor-value">--°</span>
                     </div>
+                    <div class="sensor-item">
+                        <span class="sensor-label">Alpha (回転):</span>
+                        <span id="alpha-value" class="sensor-value">--°</span>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding: 10px; background: #f7fafc; border-radius: 8px; font-size: 0.9rem;">
+                    <div><strong>センサー状態:</strong> <span id="sensor-status">確認中...</span></div>
+                    <div><strong>イベント受信:</strong> <span id="event-status">なし</span></div>
                 </div>
             </div>
         </div>
@@ -544,12 +558,45 @@
                         throw new Error('デバイスセンサーがサポートされていません');
                     }
                     
+                    // センサー許可確認
+                    this.checkSensorPermission();
+                    
                     this.updateDeviceStatus('準備完了！タップして開始', 'ready');
                     this.isInitialized = true;
                     
                 } catch (error) {
                     console.error('初期化エラー:', error);
                     this.updateDeviceStatus('エラー: ' + error.message, 'error');
+                }
+            }
+            
+            // センサー許可確認
+            async checkSensorPermission() {
+                try {
+                    // センサー許可を要求
+                    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                        const permission = await DeviceOrientationEvent.requestPermission();
+                        if (permission === 'granted') {
+                            this.updateSensorStatus('許可済み');
+                            console.log('センサー許可が承認されました');
+                        } else {
+                            this.updateSensorStatus('拒否されました');
+                            console.log('センサー許可が拒否されました');
+                        }
+                    } else {
+                        this.updateSensorStatus('許可不要（自動許可）');
+                        console.log('センサー許可は自動的に許可されています');
+                    }
+                } catch (error) {
+                    this.updateSensorStatus('エラー: ' + error.message);
+                    console.error('センサー許可エラー:', error);
+                }
+            }
+            
+            updateSensorStatus(status) {
+                const statusElement = document.getElementById('sensor-status');
+                if (statusElement) {
+                    statusElement.textContent = status;
                 }
             }
             
@@ -631,10 +678,14 @@
             
             startSensorEvents() {
                 window.addEventListener('deviceorientation', this.handleOrientation.bind(this));
+                console.log('センサーイベントリスナーを開始しました');
+                this.updateEventStatus('リスナー開始');
             }
             
             stopSensorEvents() {
                 window.removeEventListener('deviceorientation', this.handleOrientation.bind(this));
+                console.log('センサーイベントリスナーを停止しました');
+                this.updateEventStatus('停止中');
             }
             
             handleOrientation(event) {
@@ -642,9 +693,13 @@
                 
                 const gamma = event.gamma; // 左右傾き (-180 to 180)
                 const beta = event.beta;   // 前後傾き (-180 to 180)
+                const alpha = event.alpha; // 回転 (-180 to 180)
                 
                 // センサー値表示更新
-                this.updateSensorDisplay(gamma, beta);
+                this.updateSensorDisplay(gamma, beta, alpha);
+                
+                // イベント受信状態更新
+                this.updateEventStatus('受信中');
                 
                 // 音階計算（gamma使用）
                 const frequency = this.calculateFrequency(gamma);
@@ -721,10 +776,11 @@
                 document.getElementById('volume-display').textContent = `${volumePercent}%`;
             }
             
-            updateSensorDisplay(gamma, beta) {
+            updateSensorDisplay(gamma, beta, alpha) {
                 // センサー値表示
                 document.getElementById('gamma-value').textContent = `${Math.round(gamma)}°`;
                 document.getElementById('beta-value').textContent = `${Math.round(beta)}°`;
+                document.getElementById('alpha-value').textContent = `${Math.round(alpha)}°`;
             }
             
             updateStartButton(isPlaying) {
@@ -735,6 +791,62 @@
                 } else {
                     button.textContent = '🎵 演奏開始';
                     button.classList.remove('playing');
+                }
+            }
+            
+            updateEventStatus(status) {
+                const eventElement = document.getElementById('event-status');
+                if (eventElement) {
+                    eventElement.textContent = status;
+                }
+            }
+            
+            // 音声テスト機能
+            testSound() {
+                if (!this.audioContext) {
+                    alert('音声システムが初期化されていません');
+                    return;
+                }
+                
+                try {
+                    // AudioContextをresume（iOS対応）
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+                    
+                    // テスト用オシレーター作成
+                    const testOsc = this.audioContext.createOscillator();
+                    const testGain = this.audioContext.createGain();
+                    
+                    // 設定
+                    testOsc.type = 'sine';
+                    testOsc.frequency.setValueAtTime(440, this.audioContext.currentTime); // A4
+                    testGain.gain.setValueAtTime(0.3, this.audioContext.currentTime); // 適度な音量
+                    
+                    // 接続
+                    testOsc.connect(testGain);
+                    testGain.connect(this.audioContext.destination);
+                    
+                    // フェードイン
+                    testGain.gain.setValueAtTime(0, this.audioContext.currentTime);
+                    testGain.gain.linearRampToValueAtTime(0.3, this.audioContext.currentTime + 0.1);
+                    
+                    // 開始
+                    testOsc.start();
+                    
+                    // 1秒後に停止
+                    setTimeout(() => {
+                        testGain.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.1);
+                        setTimeout(() => {
+                            testOsc.stop();
+                        }, 100);
+                    }, 1000);
+                    
+                    console.log('音声テスト実行中...');
+                    
+                } catch (error) {
+                    console.error('音声テストエラー:', error);
+                    alert('音声テストエラー: ' + error.message);
                 }
             }
         }
@@ -756,6 +868,26 @@
                 } else {
                     app.startAudio();
                 }
+            });
+            
+            // 音声テストボタンイベント
+            const testSoundButton = document.getElementById('test-sound-button');
+            testSoundButton.addEventListener('click', () => {
+                if (!app.isInitialized) {
+                    alert('アプリの初期化が完了していません。ページを再読み込みしてください。');
+                    return;
+                }
+                app.testSound();
+            });
+            
+            // センサー許可ボタンイベント
+            const permissionButton = document.getElementById('permission-button');
+            permissionButton.addEventListener('click', () => {
+                if (!app.isInitialized) {
+                    alert('アプリの初期化が完了していません。ページを再読み込みしてください。');
+                    return;
+                }
+                app.checkSensorPermission();
             });
             
             // ページ離脱時のクリーンアップ
