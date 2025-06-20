@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>TiltHarmonica - スマホ傾きハーモニカ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .explanation-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .explanation-section h2 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        .explanation-section h3 {
+            color: #2d3748;
+            margin: 20px 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        .explanation-section p {
+            margin-bottom: 10px;
+            color: #2d3748;
+        }
+
+        .explanation-section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-section li {
+            margin-bottom: 5px;
+            color: #2d3748;
+        }
+
+        .code-block {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .status-section,
+        .control-section,
+        .instruction-section,
+        .action-section,
+        .sensor-section {
+            margin-bottom: 25px;
+        }
+
+        .status-card,
+        .control-card,
+        .instruction-card,
+        .sensor-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-card h3,
+        .control-card h3,
+        .instruction-card h3,
+        .sensor-card h3 {
+            margin-bottom: 15px;
+            color: #4a5568;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-text {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .status-indicator.ready .status-text {
+            color: #38a169;
+        }
+
+        .status-indicator.error .status-text {
+            color: #e53e3e;
+        }
+
+        .info-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .value {
+            font-weight: 600;
+            color: #2d3748;
+            font-family: 'Courier New', monospace;
+        }
+
+        .instructions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .instruction-item .icon {
+            font-size: 1.5rem;
+            min-width: 30px;
+        }
+
+        .instruction-item .text {
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        .start-button {
+            width: 100%;
+            padding: 18px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            margin-bottom: 15px;
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .start-button:active {
+            transform: translateY(0);
+        }
+
+        .start-button.playing {
+            background: linear-gradient(45deg, #e53e3e, #c53030);
+            box-shadow: 0 4px 15px rgba(229, 62, 62, 0.4);
+        }
+
+        .permission-notice {
+            text-align: center;
+            color: #e53e3e;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .sensor-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .sensor-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .sensor-label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .sensor-value {
+            font-weight: 600;
+            color: #2d3748;
+            font-family: 'Courier New', monospace;
+            background: #f7fafc;
+            padding: 4px 8px;
+            border-radius: 4px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .warning-box {
+            background: #fed7d7;
+            border: 1px solid #feb2b2;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #c53030;
+        }
+
+        .info-box {
+            background: #bee3f8;
+            border: 1px solid #90cdf4;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            color: #2b6cb0;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .status-card,
+            .control-card,
+            .instruction-card,
+            .sensor-card,
+            .explanation-section {
+                padding: 15px;
+            }
+            
+            .start-button {
+                padding: 15px;
+                font-size: 1.2rem;
+            }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .playing .start-button {
+            animation: pulse 2s infinite;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            }
+            
+            .status-card,
+            .control-card,
+            .instruction-card,
+            .sensor-card,
+            .explanation-section {
+                background: rgba(45, 55, 72, 0.95);
+                color: #e2e8f0;
+            }
+            
+            .status-card h3,
+            .control-card h3,
+            .instruction-card h3,
+            .sensor-card h3,
+            .explanation-section h2,
+            .explanation-section h3 {
+                color: #e2e8f0;
+            }
+            
+            .label,
+            .sensor-label {
+                color: #a0aec0;
+            }
+            
+            .value,
+            .sensor-value {
+                color: #e2e8f0;
+            }
+            
+            .instruction-item {
+                background: #2d3748;
+                color: #e2e8f0;
+            }
+            
+            .sensor-value {
+                background: #4a5568;
+            }
+            
+            .code-block {
+                background: #2d3748;
+                color: #e2e8f0;
+                border-color: #4a5568;
+            }
+            
+            .explanation-section p,
+            .explanation-section li {
+                color: #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 TiltHarmonica</h1>
+            <p class="subtitle">スマホを傾けて演奏しよう！</p>
+        </header>
+
+        <!-- 動作説明セクション -->
+        <div class="explanation-section">
+            <h2>📖 アプリの動作について</h2>
+            
+            <h3>🎯 アプリの目的</h3>
+            <p>このアプリは、スマートフォンの傾きセンサー（ジャイロ・加速度センサー）を使って、直感的に音階と音量を操作して演奏体験を提供します。</p>
+            
+            <h3>🔧 技術的な仕組み</h3>
+            <p><strong>使用している技術:</strong></p>
+            <ul>
+                <li><strong>Web Audio API</strong>: ブラウザで音声を生成・制御</li>
+                <li><strong>DeviceOrientationEvent</strong>: スマホの傾きを検知</li>
+                <li><strong>HTML5/CSS3</strong>: レスポンシブなUI</li>
+                <li><strong>JavaScript ES6+</strong>: モダンなプログラミング</li>
+            </ul>
+
+            <h3>📱 センサーの動作原理</h3>
+            <p>スマートフォンには以下のセンサーが搭載されています：</p>
+            <ul>
+                <li><strong>Gamma軸（左右傾き）</strong>: スマホを左右に傾けると音階が変わります</li>
+                <li><strong>Beta軸（前後傾き）</strong>: スマホを前後に傾けると音量が変わります</li>
+            </ul>
+
+            <h3>🎼 音階の仕組み</h3>
+            <p>音階は以下のように制御されます：</p>
+            <div class="code-block">
+音階範囲: C4 (261.63Hz) 〜 C5 (523.25Hz)
+左右傾き: -45° 〜 +45° → 音階に変換
+前後傾き: -30° 〜 +30° → 音量に変換（0〜80%）
+            </div>
+
+            <h3>⚠️ 重要な注意事項</h3>
+            <div class="warning-box">
+                <strong>音が出るアプリです！</strong><br>
+                • 周囲の環境にご配慮ください<br>
+                • イヤホン使用を推奨します<br>
+                • 静かな場所でお楽しみください
+            </div>
+
+            <h3>📋 対応デバイス</h3>
+            <div class="info-box">
+                <strong>推奨:</strong> iOS Safari、Android Chrome<br>
+                <strong>制限:</strong> PCブラウザではセンサーが利用できません<br>
+                <strong>テスト:</strong> PCではマウス移動でシミュレート可能
+            </div>
+
+            <h3>🔍 デバッグ情報</h3>
+            <p>ブラウザの開発者ツール（F12）のコンソールで以下の情報が確認できます：</p>
+            <ul>
+                <li>センサー値のリアルタイム表示</li>
+                <li>エラーメッセージ</li>
+                <li>音声処理の状態</li>
+            </ul>
+        </div>
+
+        <!-- アプリ本体 -->
+        <div class="status-section">
+            <div class="status-card">
+                <h3>📱 デバイス状態</h3>
+                <div id="device-status" class="status-indicator">
+                    <span class="status-text">センサーを確認中...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <div class="control-card">
+                <h3>🎼 音階・音量</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label">音階:</span>
+                        <span id="note-display" class="value">--</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">周波数:</span>
+                        <span id="frequency-display" class="value">-- Hz</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">音量:</span>
+                        <span id="volume-display" class="value">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="instruction-section">
+            <div class="instruction-card">
+                <h3>🎮 操作方法</h3>
+                <div class="instructions">
+                    <div class="instruction-item">
+                        <span class="icon">↔️</span>
+                        <span class="text">左右に傾ける → 音階が変わります</span>
+                    </div>
+                    <div class="instruction-item">
+                        <span class="icon">↕️</span>
+                        <span class="text">前後に傾ける → 音量が変わります</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-section">
+            <button id="start-button" class="start-button">
+                🎵 演奏開始
+            </button>
+            <div id="permission-notice" class="permission-notice">
+                <p>⚠️ 音が出るので周囲にご配慮ください</p>
+            </div>
+        </div>
+
+        <div class="sensor-section">
+            <div class="sensor-card">
+                <h3>📊 センサー値</h3>
+                <div class="sensor-grid">
+                    <div class="sensor-item">
+                        <span class="sensor-label">Gamma (左右):</span>
+                        <span id="gamma-value" class="sensor-value">--°</span>
+                    </div>
+                    <div class="sensor-item">
+                        <span class="sensor-label">Beta (上下):</span>
+                        <span id="beta-value" class="sensor-value">--°</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TiltHarmonica {
+            constructor() {
+                this.audioContext = null;
+                this.oscillator = null;
+                this.gainNode = null;
+                this.isPlaying = false;
+                this.isInitialized = false;
+                
+                // 音階設定（C4〜C5）
+                this.notes = {
+                    'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13,
+                    'E4': 329.63, 'F4': 349.23, 'F#4': 369.99, 'G4': 392.00,
+                    'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+                    'C5': 523.25
+                };
+                
+                this.noteNames = Object.keys(this.notes);
+                
+                // センサー値の範囲設定
+                this.gammaRange = { min: -45, max: 45 }; // 左右傾き
+                this.betaRange = { min: -30, max: 30 };  // 前後傾き
+                
+                this.init();
+            }
+            
+            async init() {
+                this.updateDeviceStatus('初期化中...', 'loading');
+                
+                try {
+                    // Web Audio API初期化
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // センサーサポート確認
+                    if (!window.DeviceOrientationEvent) {
+                        throw new Error('デバイスセンサーがサポートされていません');
+                    }
+                    
+                    this.updateDeviceStatus('準備完了！タップして開始', 'ready');
+                    this.isInitialized = true;
+                    
+                } catch (error) {
+                    console.error('初期化エラー:', error);
+                    this.updateDeviceStatus('エラー: ' + error.message, 'error');
+                }
+            }
+            
+            updateDeviceStatus(message, status) {
+                const statusElement = document.getElementById('device-status');
+                const statusText = statusElement.querySelector('.status-text');
+                
+                statusText.textContent = message;
+                statusElement.className = `status-indicator ${status}`;
+            }
+            
+            startAudio() {
+                if (!this.audioContext || this.isPlaying) return;
+                
+                try {
+                    // AudioContextをresume（iOS対応）
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+                    
+                    // オシレーター作成
+                    this.oscillator = this.audioContext.createOscillator();
+                    this.gainNode = this.audioContext.createGain();
+                    
+                    // 初期設定
+                    this.oscillator.type = 'sine';
+                    this.oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime); // A4
+                    this.gainNode.gain.setValueAtTime(0, this.audioContext.currentTime);
+                    
+                    // 接続
+                    this.oscillator.connect(this.gainNode);
+                    this.gainNode.connect(this.audioContext.destination);
+                    
+                    // 開始
+                    this.oscillator.start();
+                    this.isPlaying = true;
+                    
+                    // センサーイベント開始
+                    this.startSensorEvents();
+                    
+                    // UI更新
+                    this.updateStartButton(true);
+                    this.updateDeviceStatus('演奏中...', 'ready');
+                    
+                } catch (error) {
+                    console.error('音声開始エラー:', error);
+                    this.updateDeviceStatus('音声エラー: ' + error.message, 'error');
+                }
+            }
+            
+            stopAudio() {
+                if (!this.isPlaying) return;
+                
+                try {
+                    // フェードアウト
+                    this.gainNode.gain.setValueAtTime(this.gainNode.gain.value, this.audioContext.currentTime);
+                    this.gainNode.gain.linearRampToValueAtTime(0, this.audioContext.currentTime + 0.1);
+                    
+                    setTimeout(() => {
+                        if (this.oscillator) {
+                            this.oscillator.stop();
+                            this.oscillator = null;
+                        }
+                        this.gainNode = null;
+                        this.isPlaying = false;
+                        
+                        // センサーイベント停止
+                        this.stopSensorEvents();
+                        
+                        // UI更新
+                        this.updateStartButton(false);
+                        this.updateDeviceStatus('準備完了！タップして開始', 'ready');
+                    }, 100);
+                    
+                } catch (error) {
+                    console.error('音声停止エラー:', error);
+                }
+            }
+            
+            startSensorEvents() {
+                window.addEventListener('deviceorientation', this.handleOrientation.bind(this));
+            }
+            
+            stopSensorEvents() {
+                window.removeEventListener('deviceorientation', this.handleOrientation.bind(this));
+            }
+            
+            handleOrientation(event) {
+                if (!this.isPlaying || !this.oscillator || !this.gainNode) return;
+                
+                const gamma = event.gamma; // 左右傾き (-180 to 180)
+                const beta = event.beta;   // 前後傾き (-180 to 180)
+                
+                // センサー値表示更新
+                this.updateSensorDisplay(gamma, beta);
+                
+                // 音階計算（gamma使用）
+                const frequency = this.calculateFrequency(gamma);
+                const noteName = this.getNoteName(frequency);
+                
+                // 音量計算（beta使用）
+                const volume = this.calculateVolume(beta);
+                
+                // 音声パラメータ更新
+                this.updateAudioParameters(frequency, volume);
+                
+                // UI更新
+                this.updateDisplay(noteName, frequency, volume);
+            }
+            
+            calculateFrequency(gamma) {
+                // gammaを音階範囲にマッピング
+                const clampedGamma = Math.max(this.gammaRange.min, Math.min(this.gammaRange.max, gamma));
+                const normalizedGamma = (clampedGamma - this.gammaRange.min) / (this.gammaRange.max - this.gammaRange.min);
+                
+                // 周波数範囲: C4 (261.63Hz) 〜 C5 (523.25Hz)
+                const minFreq = 261.63;
+                const maxFreq = 523.25;
+                
+                return minFreq + (maxFreq - minFreq) * normalizedGamma;
+            }
+            
+            calculateVolume(beta) {
+                // betaを音量範囲にマッピング
+                const clampedBeta = Math.max(this.betaRange.min, Math.min(this.betaRange.max, beta));
+                const normalizedBeta = (clampedBeta - this.betaRange.min) / (this.betaRange.max - this.betaRange.min);
+                
+                // 音量範囲: 0 〜 0.8（最大音量は少し抑える）
+                return Math.max(0, Math.min(0.8, normalizedBeta));
+            }
+            
+            getNoteName(frequency) {
+                // 最も近い音階を探す
+                let closestNote = 'C4';
+                let minDifference = Infinity;
+                
+                for (const [noteName, noteFreq] of Object.entries(this.notes)) {
+                    const difference = Math.abs(frequency - noteFreq);
+                    if (difference < minDifference) {
+                        minDifference = difference;
+                        closestNote = noteName;
+                    }
+                }
+                
+                return closestNote;
+            }
+            
+            updateAudioParameters(frequency, volume) {
+                if (!this.oscillator || !this.gainNode) return;
+                
+                const currentTime = this.audioContext.currentTime;
+                
+                // 周波数を滑らかに変更
+                this.oscillator.frequency.setValueAtTime(frequency, currentTime);
+                
+                // 音量を滑らかに変更
+                this.gainNode.gain.setValueAtTime(volume, currentTime);
+            }
+            
+            updateDisplay(noteName, frequency, volume) {
+                // 音階表示
+                document.getElementById('note-display').textContent = noteName;
+                
+                // 周波数表示
+                document.getElementById('frequency-display').textContent = `${Math.round(frequency)} Hz`;
+                
+                // 音量表示（パーセンテージ）
+                const volumePercent = Math.round(volume * 100);
+                document.getElementById('volume-display').textContent = `${volumePercent}%`;
+            }
+            
+            updateSensorDisplay(gamma, beta) {
+                // センサー値表示
+                document.getElementById('gamma-value').textContent = `${Math.round(gamma)}°`;
+                document.getElementById('beta-value').textContent = `${Math.round(beta)}°`;
+            }
+            
+            updateStartButton(isPlaying) {
+                const button = document.getElementById('start-button');
+                if (isPlaying) {
+                    button.textContent = '⏹️ 演奏停止';
+                    button.classList.add('playing');
+                } else {
+                    button.textContent = '🎵 演奏開始';
+                    button.classList.remove('playing');
+                }
+            }
+        }
+
+        // アプリケーション初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new TiltHarmonica();
+            
+            // 開始ボタンイベント
+            const startButton = document.getElementById('start-button');
+            startButton.addEventListener('click', () => {
+                if (!app.isInitialized) {
+                    alert('アプリの初期化が完了していません。ページを再読み込みしてください。');
+                    return;
+                }
+                
+                if (app.isPlaying) {
+                    app.stopAudio();
+                } else {
+                    app.startAudio();
+                }
+            });
+            
+            // ページ離脱時のクリーンアップ
+            window.addEventListener('beforeunload', () => {
+                if (app.isPlaying) {
+                    app.stopAudio();
+                }
+            });
+            
+            // ページ非表示時の音声停止
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && app.isPlaying) {
+                    app.stopAudio();
+                }
+            });
+        });
+
+        // デバッグ用：PCでのテスト用
+        if (!window.DeviceOrientationEvent) {
+            console.log('デバイスセンサーがサポートされていません。モバイルデバイスでお試しください。');
+            
+            // PCでのテスト用（マウス移動でシミュレート）
+            let isMouseSimulating = false;
+            
+            document.addEventListener('click', () => {
+                if (!isMouseSimulating) {
+                    isMouseSimulating = true;
+                    console.log('マウス移動でセンサー値をシミュレートします（PCテスト用）');
+                }
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (isMouseSimulating) {
+                    // マウス位置をセンサー値に変換
+                    const gamma = (e.clientX / window.innerWidth) * 90 - 45;
+                    const beta = (e.clientY / window.innerHeight) * 60 - 30;
+                    
+                    // イベントをシミュレート
+                    const event = new Event('deviceorientation');
+                    event.gamma = gamma;
+                    event.beta = beta;
+                    
+                    window.dispatchEvent(event);
+                }
+            });
+        }
+    </script>
+</body>
+</html> 
